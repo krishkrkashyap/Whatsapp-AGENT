@@ -1,0 +1,9 @@
+name,department,role,whatsapp_number,is_admin
+Raj Patel,Engineering,Developer,+919876543210,false
+Priya Sharma,Engineering,Lead,+919876543211,true
+Amit Singh,Support,Engineer,+919876543212,false
+Sneha Desai,HR,Manager,+919876543213,true
+Vikram Mehta,Finance,Analyst,+919876543214,false
+Kiran Joshi,Engineering,Senior Developer,+919876543215,false
+Pooja Rao,Marketing,Coordinator,+919876543216,false
+Arjun Nair,Operations,Supervisor,+919876543217,false

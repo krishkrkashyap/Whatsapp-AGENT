@@ -1,0 +1,51 @@
+# Environment variables (contain secrets!)
+.env
+backend/.env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+venv/
+.venv/
+*.egg-info/
+dist/
+build/
+
+# Node
+node_modules/
+frontend/dist/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+*.err.log
+
+# Docker
+*.pid
+
+# Vendored third-party gateway (has its own git repo)
+openwa-gateway/
+
+# Superpowers scratch (progress ledger, briefs)
+.superpowers/
+New Text Document.txt
+
+# scratch / generated / third-party — not for the repo
+backup/
+openwa-v0817/
+openwa-gateway/
+analyze_completion.py
+build_dashboard.py
+*.xlsx

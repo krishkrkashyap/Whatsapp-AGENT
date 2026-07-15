@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(try { Get-Content \"$env:USERPROFILE\\\\.claude\\\\plugins\\\\installed_plugins.json\" -Raw | ConvertFrom-Json | Out-Null; Get-Content \"$env:USERPROFILE\\\\.claude\\\\plugins\\\\known_marketplaces.json\" -Raw | ConvertFrom-Json | Out-Null; \"both JSON OK\" } catch { \"JSON ERROR: $_\" })",
+      "PowerShell(\"=== backend status ===\")",
+      "PowerShell(\"=== last 30 log lines ===\")",
+      "Bash(docker info *)",
+      "Bash(docker compose *)"
+    ]
+  }
+}

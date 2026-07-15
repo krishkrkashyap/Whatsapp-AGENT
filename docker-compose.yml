@@ -1,0 +1,108 @@
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: crusty-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: crusty
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in .env}
+      POSTGRES_DB: crusty
+    # CQ-12: Removed external port mapping — DB accessible only via Docker network
+    # Uncomment for local development if needed:
+    # ports:
+    #   - "5432:5432"
+    volumes:
+      - crusty_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U crusty" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: crusty-redis
+    restart: unless-stopped
+    # CQ-12: Removed external port mapping — Redis accessible only via Docker network
+    # Uncomment for local development if needed:
+    # ports:
+    #   - "6379:6379"
+    volumes:
+      - crusty_redis_data:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  openwa:
+    # Migrated to OpenWA v0.8.17 with the BAILEYS engine. WhatsApp's 2026-07-14
+    # web update broke whatsapp-web.js (send/media). Baileys talks WhatsApp's
+    # protocol directly (no Chromium, no web-page scraping) so it is immune:
+    # sends return real ids, media (photos + docs) downloads, senders resolve to
+    # real numbers instead of @lid.
+    build: ./openwa-v0817
+    container_name: crusty-openwa
+    restart: unless-stopped
+    ports:
+      - "2785:2785"
+    environment:
+      NODE_ENV: production
+      PORT: 2785
+      ENGINE_TYPE: baileys
+      AUTO_START_SESSIONS: "true"
+      # Allow the webhook to reach the backend (v0.8.17 blocks internal URLs by default)
+      SSRF_ALLOWED_HOSTS: backend
+      # Sync the gateway API key to the backend's existing OPENWA_API_KEY so no
+      # credential moves by hand (compose substitutes from .env).
+      API_MASTER_KEY: ${OPENWA_API_KEY}
+      SESSION_DATA_PATH: /app/data/sessions
+      STORAGE_TYPE: local
+      STORAGE_LOCAL_PATH: /app/data/media
+    volumes:
+      # Reuse the already-paired Baileys session volume (no re-scan).
+      - crusty_openwa2_data:/app/data
+    healthcheck:
+      test: [ "CMD", "node", "-e", "require('http').get('http://localhost:2785/api/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  backend:
+    build: ./backend
+    container_name: crusty-backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+psycopg2://crusty:${DB_PASSWORD:?set DB_PASSWORD in .env}@db:5432/crusty
+      REDIS_URL: redis://redis:6379/0
+      OPENWA_BASE_URL: http://openwa:2785/api
+      # Baileys session id (v0.8.17 migration)
+      OPENWA_SESSION_ID: b7936775-5eb9-4e0a-8bdb-b3ff13d8b8d0
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      openwa:
+        condition: service_started
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4
+
+  frontend:
+    build: ./frontend
+    container_name: crusty-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+
+volumes:
+  crusty_postgres_data:
+  crusty_redis_data:
+  crusty_openwa_data:
+  # Paired Baileys session volume (created out-of-band via docker run).
+  crusty_openwa2_data:
+    external: true

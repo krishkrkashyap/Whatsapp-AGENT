@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "better-sqlite3": "^12.10.0",
+    "markdown-pdf": "^11.0.0"
+  }
+}
